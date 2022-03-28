@@ -1,3 +1,6 @@
 [submodule "software/incubator"]
 	path = software/incubator
 	url = git@github.com:twright/example-incubator.git
+[submodule "software/verified-twin"]
+	path = software/verified_twin
+	url = git@github.com:twright/verified-twin-control.git
