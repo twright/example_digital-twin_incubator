@@ -11,3 +11,8 @@ venv/
 /software/digital_twin/data_access/influxdbserver/influxdb
 *.log
 /software/startup.conf
+**/.ipynb_checkpoints/*
+/software/outputs/*
+/software/images/*
+*.sobj
+*.swp
