@@ -1,22 +1,21 @@
-import logging
+from typing import Tuple
 
 from sage.all import RIF
 import sage.all as sg
 import numpy as np
-from influxdb_client import InfluxDBClient
-from influxdb_client.client.write_api import SYNCHRONOUS
-from oomodelling import ModelSolver
 
-from digital_twin.data_access.dbmanager.incubator_data_conversion import convert_to_results_db
-from incubator.models.plant_models.model_functions import create_lookup_table
 from verified_twin.incubator_models import SwitchingFourParameterModel
 from verified_twin.controllers import SignalArraySwitchedController
 from verified_twin.simulators import HybridSimulator
+from verified_twin.traces import VerifiedHybridTrace
+
 
 class VerifiedPlantSimulator4Params:
-    def run_simulation(self, timespan_seconds, initial_box_temperature, initial_heat_temperature,
-                       room_temperature, heater_on,
-                       C_air, G_box, C_heater, G_heater):
+    def run_simulation(self,
+            timespan_seconds, initial_box_temperature, initial_heat_temperature,
+            room_temperature, heater_on,
+            C_air, G_box, C_heater, G_heater) -> \
+            Tuple[VerifiedHybridTrace, SwitchingFourParameterModel]:
 
         timetable = np.array(timespan_seconds)
         # Need to feed room temp into box as signal: this will force a small timestep
@@ -38,6 +37,6 @@ class VerifiedPlantSimulator4Params:
             controller_output_map=(lambda xin, x: xin),
         )
 
-        trace = list(simulator.run(time_limit=RIF(timespan_seconds[-1])))
+        trace = simulator.run(time_limit=RIF(timespan_seconds[-1]))
 
-        return trace, model
+        return trace, model  # type: ignore
