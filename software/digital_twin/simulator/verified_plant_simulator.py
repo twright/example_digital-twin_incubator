@@ -37,6 +37,6 @@ class VerifiedPlantSimulator4Params:
             controller_output_map=(lambda xin, x: xin),
         )
 
-        trace = simulator.run(time_limit=RIF(timespan_seconds[-1]))
+        trace = simulator.run(time_limit=RIF(timespan_seconds[-1]) - RIF(timespan_seconds[0]))
 
         return trace, model  # type: ignore
