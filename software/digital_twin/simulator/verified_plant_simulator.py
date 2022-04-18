@@ -69,8 +69,8 @@ class VerifiedPlantMonitor4Params:
 
         model = SwitchingFourParameterModel([RIF(deepcopy(tstart)), deepcopy(initial_heat_temperature), deepcopy(initial_box_temperature)],
              T_R=deepcopy(initial_room_temperature),
-             C_air=deepcopy(C_air), G_box=deepcopy(G_box),
-             C_heater=deepcopy(C_heater), G_heater=deepcopy(G_heater))
+             C_A=deepcopy(C_air), G_B=deepcopy(G_box),
+             C_H=deepcopy(C_heater), G_H=deepcopy(G_heater))
 
         controller = PeriodicOpenLoopController(
             ctrl_step_size,
