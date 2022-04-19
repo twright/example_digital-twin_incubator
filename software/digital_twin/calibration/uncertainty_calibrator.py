@@ -10,6 +10,7 @@ from incubator.interfaces.database import IDatabase
 from verified_twin.incubator_models import SwitchingFourParameterModelCAGB
 from verified_twin.controllers import SignalArraySwitchedController
 from verified_twin.simulators import HybridSimulator
+from lbuc import FlowstarFailedException
 
 
 class UncertaintyCalibrationSystem:
@@ -93,36 +94,40 @@ def eval_trace(tr, t):
     return y
 
 
-def violation_degree(sol, trace):
-    times = sol.y[0]
+def violation_degree(data, trace):
+    times = data[0]
     durations = [RIF(t1) for t1 in times]
-    intervals = [eval_trace(trace.continuous_part, duration) for duration in durations]
-    #print(f"intervals = {[(i.str(style='brackets') if i else None) for i in intervals]}")
     try:
+        intervals = [eval_trace(trace.continuous_part, duration) for duration in durations]
+    #print(f"intervals = {[(i.str(style='brackets') if i else None) for i in intervals]}")
         return sum(
             euclidian_norm(inner_dist_from_int(y, interval[i])
                 for y, interval in zip(ys, intervals))
-            for i, ys in enumerate(reversed(sol.y[1:]), 1)
+            for i, ys in enumerate(reversed(data[1:]), 1)
         ).lower()
     except TypeError:
         return 1
 
 
 class UncertaintyCalibrationProblem:
-    def __init__(self, sol, system: UncertaintyCalibrationSystem):
-        self.sol = sol
+    def __init__(self, data, system: UncertaintyCalibrationSystem):
+        self.data = data
         self.system = system
 
     def cost(self, p):
-        T_H_spread, T_A_spread, C_air_spread, G_box_spread = p
-        trace = self.system.verified_trace(*p)
-        
-        return (2**5*violation_degree(self.sol, trace)
-            + euclidian_norm(trace(trace.domain.edges()[1])[1:3]).upper())
+        try:
+            trace = self.system.verified_trace(*p)
+        except FlowstarFailedException:
+            return 2**10
 
-    def solution_raw(self, method='Nelder-Mead',
+        # return violation_degree(self.data, trace)
+        return (2**5*violation_degree(self.data, trace)
+              + euclidian_norm(trace(trace.domain.edges()[1] + RIF("[-0.01,0.01]"))[1:3]).upper())
+
+    def solution_raw(self, x0=np.array([2,2,0.5,0.5]), method='Nelder-Mead',
+            bounds=[(0, 4), (0, 4), (0, 4), (0, 4)],
             options={'maxiter': 10, 'xatol': 0.1, 'fatol': 1}):
-        return minimize(self.cost, np.array([1, 1, 1, 1]), method=method,
+        return minimize(self.cost, x0, method=method,
             options=options)
 
     def solution(self, *args, **kwargs):
@@ -130,14 +135,10 @@ class UncertaintyCalibrationProblem:
 
 
 class UncertaintyCalibrator:
-    def __init__(self, database: IDatabase, plant_simulator, conv_xatol, conv_fatol, max_iterations):
+    def __init__(self, database: IDatabase):
         self._l = logging.getLogger("Calibrator")
         self.executor = ProcessPoolExecutor()
         self.database = database
-        self.plant_simulator = plant_simulator
-        self.conv_xatol = conv_xatol
-        self.conv_fatol = conv_fatol
-        self.max_iterations = max_iterations
 
     @staticmethod
     def run_calibration(problem: UncertaintyCalibrationProblem):
@@ -152,14 +153,9 @@ class UncertaintyCalibrator:
         reference_T_heater = signals["T_heater"][t_start_idx:t_end_idx]
         room_T = signals["in_room_temperature"][t_start_idx:t_end_idx]
 
-        # Get a reference sol by running the plant model  
-        sol, model = self.plant_simulator.run_simulation(
-            times, reference_T[0], reference_T_heater[0], room_T, ctrl_signal,
-            C_air, G_box, C_heater, G_heater)
-
         # Define the UncertaintyCalibrationProblem
         prob = UncertaintyCalibrationProblem(
-            sol,
+            (times, reference_T, reference_T_heater),
             UncertaintyCalibrationSystem(
                 times, reference_T[0], reference_T_heater[0],
                 C_air, G_box, C_heater, G_heater, room_T, ctrl_signal,
