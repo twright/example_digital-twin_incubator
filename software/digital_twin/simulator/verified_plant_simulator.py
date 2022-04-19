@@ -17,7 +17,7 @@ from verified_twin.lbuc import Signal, Logic
 
 class VerifiedPlantMonitor4Params:
     def __init__(self, properties: List[Logic]):
-        self.executor = ProcessPoolExecutor()
+        self.executor = ProcessPoolExecutor(max_workers=1)
         self.properties = properties
 
     def verified_monitoring_results(self,

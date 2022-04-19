@@ -70,7 +70,7 @@ def euclidian_norm(xs):
 
 
 def inner_dist_from_int(x, I):
-    print(f"computing inner dist of {x} and {I.str(style='brackets')}")
+    # print(f"computing inner dist of {x} and {I.str(style='brackets')}")
     if x > I.upper():
         return (RIF(x) - I)
     elif x < I.lower():
@@ -84,11 +84,11 @@ def eval_trace(tr, t):
     t0 = tr.domain.edges()[0]
     
     for r in tr.values:
-        print(f"t0 = {t0.str(style='brackets')}, t = {t.str(style='brackets')}, r.time = {r.time}")
+        # print(f"t0 = {t0.str(style='brackets')}, t = {t.str(style='brackets')}, r.time = {r.time}")
         if t.overlaps(t0 + RIF(0, r.time)):
-            print("overlap!")
+            # print("overlap!")
             y = tr.interval_list_union(r(t - t0), y)
-            print(f"y = {[yi.str(style='brackets') for yi in y]}")
+            # print(f"y = {[yi.str(style='brackets') for yi in y]}")
         t0 += RIF(r.time)
 
     return y
@@ -137,7 +137,7 @@ class UncertaintyCalibrationProblem:
 class UncertaintyCalibrator:
     def __init__(self, database: IDatabase):
         self._l = logging.getLogger("Calibrator")
-        self.executor = ProcessPoolExecutor()
+        self.executor = ProcessPoolExecutor(max_workers=1)
         self.database = database
 
     @staticmethod
