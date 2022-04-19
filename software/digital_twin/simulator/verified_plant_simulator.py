@@ -7,7 +7,7 @@ import numpy as np
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor
 
-from verified_twin.incubator_models import SwitchingFourParameterModel
+from verified_twin.incubator_models import SwitchingFourParameterModelCAGB
 from verified_twin.controllers import PeriodicOpenLoopController, SignalArraySwitchedController
 from verified_twin.simulators import HybridSimulator, VerifiedContinuousSimulator
 from verified_twin.traces import VerifiedHybridTrace
@@ -62,15 +62,17 @@ class VerifiedPlantMonitor4Params:
             initial_room_temperature, ctrl_step_size, n_samples_period,
             n_samples_heating,
             C_air, G_box, C_heater, G_heater) -> \
-            Tuple[VerifiedHybridTrace, SwitchingFourParameterModel]:
+            Tuple[VerifiedHybridTrace, SwitchingFourParameterModelCAGB]:
         # Need to feed room temp into box as signal: this will force a small timestep
         # but I will leave it for now for testing purposes!
         # Better yet, can we make this an interval?
 
-        model = SwitchingFourParameterModel([RIF(deepcopy(tstart)), deepcopy(initial_heat_temperature), deepcopy(initial_box_temperature)],
-             T_R=deepcopy(initial_room_temperature),
-             C_A=deepcopy(C_air), G_B=deepcopy(G_box),
-             C_H=deepcopy(C_heater), G_H=deepcopy(G_heater))
+        model = SwitchingFourParameterModelCAGB([RIF(tstart),
+            RIF(initial_heat_temperature),
+            RIF(initial_box_temperature),
+            RIF(C_air), RIF(G_box)],
+             T_R=RIF(initial_room_temperature),
+             C_H=RIF(C_heater), G_H=RIF(G_heater))
 
         controller = PeriodicOpenLoopController(
             ctrl_step_size,
@@ -85,7 +87,7 @@ class VerifiedPlantMonitor4Params:
 
         import time
         t1 = time.time()
-        trace = simulator.run(time_limit=(RIF(deepcopy(tend)) - RIF(deepcopy(tstart))))
+        trace = simulator.run(time_limit=(RIF(tend) - RIF(tstart)))
         t2 = time.time()
         print(f"ran verified simulation in {t2 - t1} sec")
         # from time import sleep
