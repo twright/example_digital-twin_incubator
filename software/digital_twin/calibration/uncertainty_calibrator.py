@@ -58,10 +58,10 @@ class UncertaintyCalibrationSystem:
             controller_output_map=(lambda xin, x: xin),
         )
 
-    def verified_trace(self, T_H_spread, T_A_spread, C_air_spread, G_box_spread):
+    def verified_trace(self, T_H_spread, T_A_spread, C_air_spread, G_box_spread, extra_time=RIF(0.0)):
         return self.simulator(T_H_spread, T_A_spread, C_air_spread, G_box_spread).run(
             start_time=self.tstart,
-            time_limit=(self.tend - self.tstart),
+            time_limit=(self.tend - self.tstart + extra_time),
         )
 
 
@@ -133,6 +133,22 @@ class UncertaintyCalibrationProblem:
     def solution(self, *args, **kwargs):
         return self.system.spread_parameters(*self.solution_raw(*args, **kwargs).x)
 
+    def solution_final(self, *args, **kwargs):
+        # Solution for model starting after the end of the calibration period
+
+        # Solution for calibration period
+        spreads = self.solution_raw(*args, **kwargs).x
+        (_, _, C_air, G_box) = self.system.spread_parameters(*spreads)
+
+        # Run again to find final values
+        tr = self.system.verified_trace(*spreads, extra_time=RIF(0.0))
+        T_H, T_A = eval_trace(
+            tr.continuous_part,
+            tr.domain.edges()[1] + RIF("[-0.01,0.01]")
+        )[1:3]
+        
+        return (T_H, T_A, C_air, G_box)
+
 
 class UncertaintyCalibrator:
     def __init__(self, database: IDatabase):
@@ -142,7 +158,7 @@ class UncertaintyCalibrator:
 
     @staticmethod
     def run_calibration(problem: UncertaintyCalibrationProblem):
-        return problem.solution()
+        return problem.solution_final()
 
     def calibrate(self, tstart, tend, C_air, G_box, C_heater, G_heater):
         # Get simulation data from the calibration database
