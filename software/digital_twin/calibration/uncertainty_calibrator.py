@@ -138,7 +138,7 @@ class UncertaintyCalibrationProblem:
 
         # Solution for calibration period
         spreads = self.solution_raw(*args, **kwargs).x
-        (_, _, C_air, G_box) = self.system.spread_parameters(*spreads)
+        (T_H0, T_A0, C_air, G_box) = self.system.spread_parameters(*spreads)
 
         # Run again to find final values
         tr = self.system.verified_trace(*spreads, extra_time=RIF(6.0))
@@ -147,7 +147,7 @@ class UncertaintyCalibrationProblem:
             tr.domain.edges()[1] + RIF("[-0.01,0.01]")
         )[1:3]
         
-        return (T_H, T_A, C_air, G_box)
+        return (T_H0, T_A0, T_H, T_A, C_air, G_box)
 
 
 class UncertaintyCalibrator:
