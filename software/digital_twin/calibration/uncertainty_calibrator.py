@@ -141,7 +141,7 @@ class UncertaintyCalibrationProblem:
         (_, _, C_air, G_box) = self.system.spread_parameters(*spreads)
 
         # Run again to find final values
-        tr = self.system.verified_trace(*spreads, extra_time=RIF(0.0))
+        tr = self.system.verified_trace(*spreads, extra_time=RIF(6.0))
         T_H, T_A = eval_trace(
             tr.continuous_part,
             tr.domain.edges()[1] + RIF("[-0.01,0.01]")
