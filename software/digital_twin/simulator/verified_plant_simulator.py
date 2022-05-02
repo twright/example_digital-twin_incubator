@@ -1,5 +1,5 @@
 from curses.ascii import ctrl
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from sage.all import RIF
 import sage.all as sg
@@ -44,15 +44,19 @@ class VerifiedPlantMonitor4Params:
         tstart, tend, initial_box_temperature, initial_heat_temperature,
             initial_room_temperature, ctrl_step_size, n_samples_period,
             n_samples_heating,
-            C_air, G_box, C_heater, G_heater) -> List[Signal]:
+            C_air, G_box, C_heater, G_heater) -> List[Tuple[Optional[bool], Signal]]:
         trace, _ = cls.run_simulation(
             tstart, tend, initial_box_temperature, initial_heat_temperature,
             initial_room_temperature, ctrl_step_size, n_samples_period,
             n_samples_heating,
             C_air, G_box, C_heater, G_heater,
         )
+        signals = [
+            prop.signal(trace)
+                   for prop in properties
+        ]
         monitoring_results = [
-            prop.signal(trace).G(-tstart) for prop in properties
+            (sig(0), sig.G(-tstart)) for sig in signals
         ]
         return monitoring_results
 

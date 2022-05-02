@@ -124,8 +124,7 @@ class UncertaintyCalibrationProblem:
         return (2**5*violation_degree(self.data, trace)
               + euclidian_norm(trace(trace.domain.edges()[1] + RIF("[-0.01,0.01]"))[1:3]).upper())
 
-    def solution_raw(self, x0=np.array([2,2,0.5,0.5]), method='Nelder-Mead',
-            bounds=[(0, 4), (0, 4), (0, 4), (0, 4)],
+    def solution_raw(self, x0=np.array([0.2,0.2,0.2,0.2]), method='Nelder-Mead',
             options={'maxiter': 10, 'xatol': 0.1, 'fatol': 1}):
         return minimize(self.cost, x0, method=method,
             options=options)
